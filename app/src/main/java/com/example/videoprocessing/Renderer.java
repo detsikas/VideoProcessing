@@ -116,6 +116,7 @@ class Renderer {
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
 
         GLES30.glUseProgram(0);
+        checkGLError(TAG, "Draw");
     }
 
     private void createProgram()
@@ -196,5 +197,18 @@ class Renderer {
         mVertexBuffer = bbVertices.asFloatBuffer();
         mVertexBuffer.put(QUAD_COORDS);
         mVertexBuffer.position(0);
+    }
+
+    private static void checkGLError(String tag, String label) {
+        int lastError = GLES30.GL_NO_ERROR;
+        // Drain the queue of all errors.
+        int error;
+        while ((error = GLES30.glGetError()) != GLES30.GL_NO_ERROR) {
+            Log.e(tag, label + ": glError " + error);
+            lastError = error;
+        }
+        if (lastError != GLES30.GL_NO_ERROR) {
+            throw new RuntimeException(label + ": glError " + lastError);
+        }
     }
 }
