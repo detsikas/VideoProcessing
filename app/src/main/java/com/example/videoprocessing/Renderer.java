@@ -16,7 +16,7 @@ import java.nio.FloatBuffer;
 class Renderer {
     private static final String TAG = Renderer.class.getSimpleName();
     private static final String VERTEX_SHADER_NAME = "shader.vert";
-    private static final String FRAGMENT_SHADER_NAME = "shader.frag";
+    private static final String FRAGMENT_SHADER_NAME = "identity.frag";
 
     private final float[] IDENTITY_MATRIX = new float[16];
     private static final int SIZEOF_FLOAT = 4;
