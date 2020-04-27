@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">VideoProcessing</string>
+    <string name="record">Record</string>
+    <string name="load">Load</string>
 </resources>

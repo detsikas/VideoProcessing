@@ -18,6 +18,5 @@ public class MainActivity extends AppCompatActivity {
 
     public void onLoad(View view)
     {}
-    
 
 }

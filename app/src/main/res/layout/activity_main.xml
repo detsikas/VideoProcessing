@@ -11,11 +11,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="onRecord"
-        android:text="Record"
+        android:text="@string/record"
         app:layout_constraintBottom_toTopOf="@+id/loadButton"
-        app:layout_constraintEnd_toEndOf="@+id/loadButton"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/loadButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.751" />
 
@@ -25,7 +25,9 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="196dp"
         android:onClick="onLoad"
-        android:text="Load"
+        android:text="@string/load"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:layout_editor_absoluteX="161dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
