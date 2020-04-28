@@ -17,20 +17,19 @@ class FrameProcessor implements RendererObserver{
     private CustomContext mRenderingContext;
     private MediaCodec mMediaCodec;
     private MediaExtractor mMediaExtractor;
-    private int mVideoTrackIndex;
 
     FrameProcessor(Context context, Uri uri) throws IOException {
         mMediaExtractor = new MediaExtractor();
         mMediaExtractor.setDataSource(context, uri, null);
-        mVideoTrackIndex = getVideoTrackIndex(mMediaExtractor);
-        if (mVideoTrackIndex<0)
+        int videoTrackIndex = getVideoTrackIndex(mMediaExtractor);
+        if (videoTrackIndex <0)
         {
             Log.e(TAG, "No video track");
         }
         else
         {
-            mMediaExtractor.selectTrack(mVideoTrackIndex);
-            MediaFormat mediaFormat = mMediaExtractor.getTrackFormat(mVideoTrackIndex);
+            mMediaExtractor.selectTrack(videoTrackIndex);
+            MediaFormat mediaFormat = mMediaExtractor.getTrackFormat(videoTrackIndex);
             int width = mediaFormat.getInteger(MediaFormat.KEY_WIDTH);
             int height = mediaFormat.getInteger(MediaFormat.KEY_HEIGHT);
             int rotation = mediaFormat.getInteger(MediaFormat.KEY_ROTATION);
@@ -53,8 +52,12 @@ class FrameProcessor implements RendererObserver{
 
     private void stop()
     {
-        mMediaCodec.stop();
-        mMediaCodec.release();
+        if (mMediaCodec!=null)
+        {
+            mMediaCodec.stop();
+            mMediaCodec.release();
+            mMediaCodec = null;
+        }
     }
 
     private void setupMediaCodec(MediaFormat mediaFormat) throws IOException
@@ -76,8 +79,6 @@ class FrameProcessor implements RendererObserver{
 
             @Override
             public void onOutputBufferAvailable(@NonNull MediaCodec codec, int index, @NonNull MediaCodec.BufferInfo info) {
-                ByteBuffer outputBuffer = codec.getOutputBuffer(index);
-                MediaFormat bufferFormat = codec.getOutputFormat(index);
                 Log.d(TAG, "Processing output buffer "+index+" size: "+info.size);
                 processOutputBuffer(info, index);
             }
@@ -108,11 +109,6 @@ class FrameProcessor implements RendererObserver{
         }
         else
         {
-            if (mMediaExtractor.getSampleTrackIndex() != mVideoTrackIndex) {
-                Log.w(TAG, "WEIRD: got sample from track " +
-                        mMediaExtractor.getSampleTrackIndex() + ", expected " + mVideoTrackIndex);
-            }
-
             mMediaCodec.queueInputBuffer(index, 0, sampleSize,
                     mMediaExtractor.getSampleTime(), 0);
 
@@ -144,6 +140,8 @@ class FrameProcessor implements RendererObserver{
 
     void release()
     {
+        stop();
+        mRenderingContext.removeObserver(this);
         mRenderingContext.release();
     }
 

@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -23,18 +24,19 @@ public class MainActivity extends AppCompatActivity {
     private static final int PICK_FROM_GALLERY = 1;
     final StoragePermissionHandler mStoragePermissionHandler = new StoragePermissionHandler();
 
-    private VideoView videoView;
-    private Button processButton;
-
+    private VideoView mVideoView;
+    private Button mProcessButton;
+    private FrameProcessor mFrameProcessor;
     private Uri mVideoUri;
+    private Handler mFrameHandler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        videoView = findViewById(R.id.videoView);
-        processButton = findViewById(R.id.process);
+        mVideoView = findViewById(R.id.videoView);
+        mProcessButton = findViewById(R.id.process);
     }
 
     public void onLoad(View view)
@@ -46,11 +48,22 @@ public class MainActivity extends AppCompatActivity {
 
     public void onProcess(View view)
     {
-        try {
-            FrameProcessor frameProcessor = new FrameProcessor(getApplicationContext(), mVideoUri);
-            frameProcessor.start();
-        } catch (IOException e) {
-            e.printStackTrace();
+        mFrameHandler.post(() -> {
+            try {
+                mFrameProcessor = new FrameProcessor(getApplicationContext(), mVideoUri);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mFrameProcessor.start();
+        });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mFrameProcessor!=null)
+        {
+            mFrameProcessor.release();
         }
     }
 
@@ -60,13 +73,13 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == PICK_FROM_GALLERY && resultCode == RESULT_OK && data != null && data.getData() != null) {
             mVideoUri = data.getData();
-            videoView.setVideoURI(mVideoUri);
-            videoView.setOnPreparedListener(mp -> {
-                videoView.start();
-                processButton.setVisibility(View.INVISIBLE);
+            mVideoView.setVideoURI(mVideoUri);
+            mVideoView.setOnPreparedListener(mp -> {
+                mVideoView.start();
+                mProcessButton.setVisibility(View.INVISIBLE);
             });
 
-            videoView.setOnCompletionListener(mp -> processButton.setVisibility(View.VISIBLE));
+            mVideoView.setOnCompletionListener(mp -> mProcessButton.setVisibility(View.VISIBLE));
         }
     }
 
