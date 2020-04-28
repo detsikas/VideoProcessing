@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity implements FrameProcessorObs
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int PICK_FROM_GALLERY = 1;
-    final StoragePermissionHandler mStoragePermissionHandler = new StoragePermissionHandler();
+    private StoragePermissionHandler mStoragePermissionHandler;
 
     private VideoView mVideoView;
     private Button mProcessButton;
@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements FrameProcessorObs
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mStoragePermissionHandler = new StoragePermissionHandler(getResources().getString(R.string.app_name));
         mVideoView = findViewById(R.id.videoView);
         mProcessButton = findViewById(R.id.process);
         mProgressBar = findViewById(R.id.processingBar);
@@ -47,7 +48,6 @@ public class MainActivity extends AppCompatActivity implements FrameProcessorObs
     public void onLoad(View view)
     {
         Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
-        // Start the Intent
         startActivityForResult(galleryIntent, PICK_FROM_GALLERY);
     }
 

@@ -16,12 +16,14 @@ import net.peeknpoke.apps.videoprocessing.R;
 public class StoragePermissionHandler extends PermissionHandlerAbstract {
     //private static final String TAG = StoragePermissionHandler.class.getSimpleName();
     public static final int CODE = 0b10;
+    private static String mAppName;
 
-    public StoragePermissionHandler()
+    public StoragePermissionHandler(String appName)
     {
         super(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                 new int[]{R.string.permission_external_storage_rationale},
                 new int[]{R.string.permission_storage_never_ask_again_rationale});
+        mAppName = appName;
     }
 
     @Override
@@ -86,7 +88,7 @@ public class StoragePermissionHandler extends PermissionHandlerAbstract {
         showListener = dialog -> mIsDialogVisible = true;
 
         AlertDialog.Builder builder = new AlertDialog.Builder(thisActivity, R.style.Theme_MaterialComponents_Light_Dialog_Alert);
-        builder.setTitle("Xpoze")
+        builder.setTitle(mAppName)
                 .setMessage(rationale)
                 .setOnDismissListener(dismissListener)
                 .setNeutralButton(R.string.ok, listenerNeutral);
@@ -122,7 +124,7 @@ public class StoragePermissionHandler extends PermissionHandlerAbstract {
         };*/
 
         AlertDialog.Builder builder = new AlertDialog.Builder(thisActivity, R.style.Theme_MaterialComponents_Light_Dialog_Alert);
-        builder.setTitle("Xpoze")
+        builder.setTitle(mAppName)
                 .setMessage(rationale)
                 .setPositiveButton(R.string.Goto_app_settings, listenerPositive)
                 //.setOnDismissListener(dismissListener)
