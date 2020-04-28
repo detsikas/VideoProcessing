@@ -3,7 +3,6 @@ package net.peeknpoke.apps.videoprocessing;
 import android.content.Context;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
-import android.opengl.Matrix;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -19,7 +18,6 @@ class Renderer {
     private static final String VERTEX_SHADER_NAME = "shader.vert";
     private static final String FRAGMENT_SHADER_NAME = "identity.frag";
 
-    private final float[] IDENTITY_MATRIX = new float[16];
     private static final int SIZEOF_FLOAT = 4;
 
     private static final float[] QUAD_COORDS = {
@@ -30,10 +28,10 @@ class Renderer {
     };
 
     private static final float[] QUAD_TEXCOORDS = {
-            0.0f, 0.0f,     // 0 bottom left
-            1.0f, 0.0f,     // 1 bottom right
             0.0f, 1.0f,     // 2 top left
-            1.0f, 1.0f      // 3 top right
+            1.0f, 1.0f,      // 3 top right
+            0.0f, 0.0f,     // 0 bottom left
+            1.0f, 0.0f     // 1 bottom right
     };
 
     private FloatBuffer mTextureVertexBuffer;
@@ -53,7 +51,6 @@ class Renderer {
     Renderer(Context context)
     {
         super();
-        Matrix.setIdentityM(IDENTITY_MATRIX, 0);
         parseShaders(context);
         createProgram();
         createTextureVertexBuffer();
@@ -74,7 +71,7 @@ class Renderer {
         GLES30.glDeleteProgram(mProgram);
     }
 
-    void onDrawFrame(int texture, int viewPortWidth, int viewPortHeight)
+    void onDrawFrame(float[] transformMatrix, int texture, int viewPortWidth, int viewPortHeight)
     {
         GLES30.glViewport(0, 0, viewPortWidth, viewPortHeight);
         GLES30.glUseProgram(mProgram);
@@ -83,7 +80,7 @@ class Renderer {
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture);
 
         // Copy the texture transformation matrix over.
-        GLES30.glUniformMatrix4fv(muTexMatrixLoc, 1, false, IDENTITY_MATRIX, 0);
+        GLES30.glUniformMatrix4fv(muTexMatrixLoc, 1, false, transformMatrix, 0);
 
         // Set the vertex positions.
         int COORDS_PER_VERTEX = 2;

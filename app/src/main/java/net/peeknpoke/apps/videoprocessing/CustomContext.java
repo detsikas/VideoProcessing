@@ -34,6 +34,7 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
     private Surface mSurface;
     private int mOutputFrameIndex;
     private Context mContext;
+    private float[] mTransformMatrix = new float[16];
 
     CustomContext(Context context,
                          int imageWidth, int imageHeight)
@@ -93,7 +94,7 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
         if (mRenderer!=null)
         {
-            mRenderer.onDrawFrame(mTextureHandler.getTexture(), mImageWidth, mImageHeight);
+            mRenderer.onDrawFrame(mTransformMatrix, mTextureHandler.getTexture(), mImageWidth, mImageHeight);
         }
     }
 
@@ -162,6 +163,7 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         Log.d(TAG, "Frame is available for rendering");
         mSurfaceTexture.updateTexImage();
+        mSurfaceTexture.getTransformMatrix(mTransformMatrix);
         onDrawFrame();
         String filename = "output_"+mOutputFrameIndex;
         savePixels(mContext, filename);

@@ -36,7 +36,13 @@ class FrameProcessor {
             MediaFormat mediaFormat = mMediaExtractor.getTrackFormat(mVideoTrackIndex);
             int width = mediaFormat.getInteger(MediaFormat.KEY_WIDTH);
             int height = mediaFormat.getInteger(MediaFormat.KEY_HEIGHT);
-
+            int rotation = mediaFormat.getInteger(MediaFormat.KEY_ROTATION);
+            if (rotation==90 || rotation==270)
+            {
+                int temp = width;
+                width = height;
+                height = temp;
+            }
             mRenderingContext = new CustomContext(context, width, height);
             setupMediaCodec(mediaFormat);
         }
