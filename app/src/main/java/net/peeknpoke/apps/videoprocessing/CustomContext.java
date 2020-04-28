@@ -38,13 +38,13 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
     private Context mContext;
     private float[] mTransformMatrix = new float[16];
     private ArrayList<WeakReference<RendererObserver>> mObservers = new ArrayList<>();
-    private int maxFrames;
+    private int mMaxFrames;
 
     CustomContext(Context context,
                          int imageWidth, int imageHeight)
     {
         mContext = context;
-        maxFrames = mContext.getResources().getInteger(R.integer.MAX_FRAMES);
+        mMaxFrames = mContext.getResources().getInteger(R.integer.MAX_FRAMES);
         mDpy = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         int[] version = new int[2];
         EGL14.eglInitialize(mDpy, version, 0, version, 1);
@@ -97,12 +97,9 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
     private void onDrawFrame()
     {
        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
-        if (mRenderer!=null && mOutputFrameIndex<maxFrames)
+        if (mRenderer!=null)
         {
             mRenderer.onDrawFrame(mTransformMatrix, mTextureHandler.getTexture(), mImageWidth, mImageHeight);
-            mOutputFrameIndex++;
-            if (mOutputFrameIndex==maxFrames)
-                notifyObservers();
         }
     }
 
@@ -166,11 +163,18 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         Log.d(TAG, "Frame is available for rendering");
-        mSurfaceTexture.updateTexImage();
-        mSurfaceTexture.getTransformMatrix(mTransformMatrix);
-        onDrawFrame();
-        String filename = "output_"+mOutputFrameIndex;
-        savePixels(mContext, filename);
+        if (mOutputFrameIndex< mMaxFrames)
+        {
+            mSurfaceTexture.updateTexImage();
+            mSurfaceTexture.getTransformMatrix(mTransformMatrix);
+            onDrawFrame();
+            String filename = "output_"+mOutputFrameIndex;
+            savePixels(mContext, filename);
+            mOutputFrameIndex++;
+        }
+
+        if (mOutputFrameIndex==mMaxFrames)
+            notifyObservers();
     }
 
     private WeakReference<RendererObserver> findWeakReference(RendererObserver rendererObserver)
