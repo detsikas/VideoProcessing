@@ -1,4 +1,4 @@
-package com.example.videoprocessing;
+package net.peeknpoke.apps.videoprocessing;
 
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;

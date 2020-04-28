@@ -1,4 +1,4 @@
-package com.example.videoprocessing;
+package net.peeknpoke.apps.videoprocessing;
 
 import android.content.Context;
 import android.net.Uri;

@@ -1,4 +1,4 @@
-package com.example.videoprocessing;
+package net.peeknpoke.apps.videoprocessing;
 
 import org.junit.Test;
 

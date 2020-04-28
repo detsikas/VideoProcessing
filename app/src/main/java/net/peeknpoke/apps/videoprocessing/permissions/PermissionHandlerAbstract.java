@@ -1,4 +1,4 @@
-package com.example.videoprocessing.permissions;
+package net.peeknpoke.apps.videoprocessing.permissions;
 
 import android.app.Activity;
 

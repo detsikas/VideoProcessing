@@ -1,4 +1,4 @@
-package com.example.videoprocessing.permissions;
+package net.peeknpoke.apps.videoprocessing.permissions;
 
 import android.Manifest;
 import android.app.Activity;
@@ -11,7 +11,7 @@ import android.provider.Settings;
 
 import androidx.core.app.ActivityCompat;
 
-import com.example.videoprocessing.R;
+import net.peeknpoke.apps.videoprocessing.R;
 
 public class StoragePermissionHandler extends PermissionHandlerAbstract {
     //private static final String TAG = StoragePermissionHandler.class.getSimpleName();

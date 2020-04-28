@@ -1,4 +1,4 @@
-package com.example.videoprocessing;
+package net.peeknpoke.apps.videoprocessing;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,7 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.VideoView;
 
-import com.example.videoprocessing.permissions.StoragePermissionHandler;
+import net.peeknpoke.apps.videoprocessing.permissions.StoragePermissionHandler;
 
 import java.io.IOException;
 
