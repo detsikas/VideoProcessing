@@ -1,4 +1,4 @@
-package net.peeknpoke.apps.videoprocessing;
+package net.peeknpoke.apps.frameprocessor;
 
 import android.content.Context;
 import android.media.MediaCodec;
@@ -14,14 +14,14 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-class FrameProcessor implements RendererObserver, ObserverSubject<FrameProcessorObserver> {
+public class FrameProcessor implements RendererObserver, ObserverSubject<FrameProcessorObserver> {
     private static final String TAG = FrameProcessor.class.getSimpleName();
     private CustomContext mRenderingContext;
     private MediaCodec mMediaCodec;
     private MediaExtractor mMediaExtractor;
     private ArrayList<WeakReference<FrameProcessorObserver>> mObservers = new ArrayList<>();
 
-    FrameProcessor(Context context, Uri uri) throws IOException {
+    public FrameProcessor(Context context, Uri uri, int maxFrames, String appName) throws IOException {
         mMediaExtractor = new MediaExtractor();
         mMediaExtractor.setDataSource(context, uri, null);
         int videoTrackIndex = getVideoTrackIndex(mMediaExtractor);
@@ -42,13 +42,13 @@ class FrameProcessor implements RendererObserver, ObserverSubject<FrameProcessor
                 width = height;
                 height = temp;
             }
-            mRenderingContext = new CustomContext(context, width, height);
+            mRenderingContext = new CustomContext(context, width, height, maxFrames, appName);
             mRenderingContext.registerObserver(this);
             setupMediaCodec(mediaFormat);
         }
     }
 
-    void start()
+    public void start()
     {
         mMediaCodec.start();
     }
@@ -141,7 +141,7 @@ class FrameProcessor implements RendererObserver, ObserverSubject<FrameProcessor
         return -1;
     }
 
-    void release()
+    public void release()
     {
         stop();
         mRenderingContext.removeObserver(this);

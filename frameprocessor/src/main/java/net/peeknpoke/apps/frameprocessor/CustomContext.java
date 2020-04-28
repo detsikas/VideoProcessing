@@ -1,4 +1,4 @@
-package net.peeknpoke.apps.videoprocessing;
+package net.peeknpoke.apps.frameprocessor;
 
 import android.content.Context;
 import android.content.Intent;
@@ -39,12 +39,14 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
     private float[] mTransformMatrix = new float[16];
     private ArrayList<WeakReference<RendererObserver>> mObservers = new ArrayList<>();
     private int mMaxFrames;
+    private String mAppname;
 
     CustomContext(Context context,
-                         int imageWidth, int imageHeight)
+                         int imageWidth, int imageHeight, int maxFrames, String appname)
     {
         mContext = context;
-        mMaxFrames = mContext.getResources().getInteger(R.integer.MAX_FRAMES);
+        mMaxFrames = maxFrames;
+        mAppname = appname;
         mDpy = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         int[] version = new int[2];
         EGL14.eglInitialize(mDpy, version, 0, version, 1);
@@ -128,8 +130,6 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
         mBitmap.copyPixelsFromBuffer(mBB);
         mBB.rewind();
 
-        //bitmap.setPixels(pixelsBuffer, screenshotSize-width, -width, 0, 0, width, height);
-
         saveImage(mBitmap, context, filename);
     }
 
@@ -137,7 +137,7 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
     {
         //Store to sdcard
         try {
-            File folder = FileOperations.getAppMediaFolder(context);
+            File folder = FileOperations.getAppMediaFolder(mAppname);
             if (folder!=null)
             {
                 File imageFile = FileOperations.createMediaFile(folder, filename);

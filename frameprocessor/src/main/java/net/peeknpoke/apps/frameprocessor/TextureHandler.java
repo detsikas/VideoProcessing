@@ -1,4 +1,4 @@
-package net.peeknpoke.apps.videoprocessing;
+package net.peeknpoke.apps.frameprocessor;
 
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;

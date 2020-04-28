@@ -1,9 +1,6 @@
-package net.peeknpoke.apps.videoprocessing;
+package net.peeknpoke.apps.frameprocessor;
 
-import android.content.Context;
-import android.net.Uri;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 
 import java.io.File;
@@ -13,30 +10,13 @@ import java.util.Locale;
 
 class FileOperations {
 
-    static boolean uriExists(Uri uri)
-    {
-        File file = new File(uri.toString());
-        return file.exists();
-    }
-
-    static Uri getAppMediaUri(Context context)
-    {
-        return MediaStore.Files.getContentUri("external").
-                buildUpon().appendPath(context.getResources().getString(R.string.app_name)).build();
-        //return FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName()+
-        //".provider", getAppMediaFolder());
-        //return Uri.fromFile(getAppMediaFolder());
-    }
-
-    static File getAppMediaFolder(Context context)
+    static File getAppMediaFolder(String appName)
     {
         // To be safe, you should check that the SDCard is mounted
         // using Environment.getExternalStorageState() before doing this.
         if (!Environment.getExternalStorageState().equalsIgnoreCase(Environment.MEDIA_MOUNTED)) {
             return  null;
         }
-
-        String appName = context.getResources().getString(R.string.app_name);
 
         File mediaStorageDir = new  File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DCIM),appName );

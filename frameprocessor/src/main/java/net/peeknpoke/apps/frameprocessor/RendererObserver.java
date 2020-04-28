@@ -1,4 +1,4 @@
-package net.peeknpoke.apps.videoprocessing;
+package net.peeknpoke.apps.frameprocessor;
 
 interface RendererObserver {
     void stopDecoding();

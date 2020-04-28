@@ -15,11 +15,13 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.VideoView;
 
+import net.peeknpoke.apps.frameprocessor.FrameProcessor;
+import net.peeknpoke.apps.frameprocessor.FrameProcessorObserver;
 import net.peeknpoke.apps.videoprocessing.permissions.StoragePermissionHandler;
 
 import java.io.IOException;
 
-public class MainActivity extends AppCompatActivity implements FrameProcessorObserver{
+public class MainActivity extends AppCompatActivity implements FrameProcessorObserver {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int PICK_FROM_GALLERY = 1;
@@ -55,7 +57,9 @@ public class MainActivity extends AppCompatActivity implements FrameProcessorObs
         mProgressBar.setVisibility(View.VISIBLE);
         mFrameHandler.post(() -> {
             try {
-                mFrameProcessor = new FrameProcessor(getApplicationContext(), mVideoUri);
+                mFrameProcessor = new FrameProcessor(getApplicationContext(), mVideoUri,
+                        getResources().getInteger(R.integer.MAX_FRAMES),
+                        getResources().getString(R.string.app_name));
                 mFrameProcessor.registerObserver(this);
             } catch (IOException e) {
                 e.printStackTrace();

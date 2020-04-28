@@ -1,2 +1,3 @@
 rootProject.name='VideoProcessing'
 include ':app'
+include ':frameprocessor'
