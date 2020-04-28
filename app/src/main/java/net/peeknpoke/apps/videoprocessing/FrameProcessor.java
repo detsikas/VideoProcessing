@@ -12,17 +12,14 @@ import androidx.annotation.NonNull;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-class FrameProcessor {
+class FrameProcessor implements RendererObserver{
     private static final String TAG = FrameProcessor.class.getSimpleName();
     private CustomContext mRenderingContext;
-    private Context mContext;
     private MediaCodec mMediaCodec;
     private MediaExtractor mMediaExtractor;
     private int mVideoTrackIndex;
-    private int mOutputFrameIndex = 1; // Yes, 1!
 
     FrameProcessor(Context context, Uri uri) throws IOException {
-        mContext = context;
         mMediaExtractor = new MediaExtractor();
         mMediaExtractor.setDataSource(context, uri, null);
         mVideoTrackIndex = getVideoTrackIndex(mMediaExtractor);
@@ -44,6 +41,7 @@ class FrameProcessor {
                 height = temp;
             }
             mRenderingContext = new CustomContext(context, width, height);
+            mRenderingContext.registerObserver(this);
             setupMediaCodec(mediaFormat);
         }
     }
@@ -51,6 +49,12 @@ class FrameProcessor {
     void start()
     {
         mMediaCodec.start();
+    }
+
+    private void stop()
+    {
+        mMediaCodec.stop();
+        mMediaCodec.release();
     }
 
     private void setupMediaCodec(MediaFormat mediaFormat) throws IOException
@@ -76,13 +80,6 @@ class FrameProcessor {
                 MediaFormat bufferFormat = codec.getOutputFormat(index);
                 Log.d(TAG, "Processing output buffer "+index+" size: "+info.size);
                 processOutputBuffer(info, index);
-                mRenderingContext.setOutputFrameIndex(mOutputFrameIndex);
-                if (mOutputFrameIndex==mContext.getResources().getInteger(R.integer.MAX_FRAMES))
-                {
-                    codec.stop();
-                    codec.release();
-                }
-                mOutputFrameIndex++;
             }
 
             @Override
@@ -95,6 +92,7 @@ class FrameProcessor {
 
             }
         });
+
         mMediaCodec.configure(mediaFormat, mRenderingContext.getSurface(), null, 0);
     }
 
@@ -147,5 +145,10 @@ class FrameProcessor {
     void release()
     {
         mRenderingContext.release();
+    }
+
+    @Override
+    public void stopDecoding() {
+        stop();
     }
 }

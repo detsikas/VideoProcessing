@@ -16,10 +16,12 @@ import android.view.Surface;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 
-class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
+class CustomContext implements SurfaceTexture.OnFrameAvailableListener, ObserverSubject {
     private static final String TAG = CustomContext.class.getSimpleName();
     private final EGLContext mCtx;
     private final EGLDisplay mDpy;
@@ -32,9 +34,10 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
     private int mImageHeight;
     private SurfaceTexture mSurfaceTexture;
     private Surface mSurface;
-    private int mOutputFrameIndex;
+    private int mOutputFrameIndex = 0;
     private Context mContext;
     private float[] mTransformMatrix = new float[16];
+    private ArrayList<WeakReference<RendererObserver>> mObservers = new ArrayList<>();
 
     CustomContext(Context context,
                          int imageWidth, int imageHeight)
@@ -95,6 +98,9 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
         if (mRenderer!=null)
         {
             mRenderer.onDrawFrame(mTransformMatrix, mTextureHandler.getTexture(), mImageWidth, mImageHeight);
+            mOutputFrameIndex++;
+            if (mOutputFrameIndex==mContext.getResources().getInteger(R.integer.MAX_FRAMES))
+                notifyObservers();
         }
     }
 
@@ -155,10 +161,6 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
         mRenderer = null;
     }
 
-    void setOutputFrameIndex(int outputFrameIndex) {
-        this.mOutputFrameIndex = outputFrameIndex;
-    }
-
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         Log.d(TAG, "Frame is available for rendering");
@@ -167,5 +169,40 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
         onDrawFrame();
         String filename = "output_"+mOutputFrameIndex;
         savePixels(mContext, filename);
+    }
+
+    private WeakReference<RendererObserver> findWeakReference(RendererObserver rendererObserver)
+    {
+        WeakReference<RendererObserver> weakReference = null;
+        for(WeakReference<RendererObserver> ref : mObservers) {
+            if (ref.get() == rendererObserver) {
+                weakReference = ref;
+            }
+        }
+        return weakReference;
+    }
+
+    @Override
+    public void registerObserver(RendererObserver observer) {
+        WeakReference<RendererObserver> weakReference = findWeakReference(observer);
+        if (weakReference==null)
+            mObservers.add(new WeakReference<>(observer));
+    }
+
+    @Override
+    public void removeObserver(RendererObserver observer) {
+        WeakReference<RendererObserver> weakReference = findWeakReference(observer);
+        if (weakReference != null) {
+            mObservers.remove(weakReference);
+        }
+    }
+
+    @Override
+    public void notifyObservers() {
+        for (WeakReference<RendererObserver> co:mObservers){
+            RendererObserver observer = co.get();
+            if (observer!=null)
+                observer.stopDecoding();
+        }
     }
 }
