@@ -2,7 +2,7 @@
     <string name="app_name">VideoProcessing</string>
     <string name="record">Record</string>
     <string name="load">Load</string>
-    <string name="button">Button</string>
+    <string name="process">Process</string>
     <string name="permission_external_storage_rationale">External storage access is needed for storing output frames</string>
     <string name="permission_storage_never_ask_again_rationale">External storage access is needed for storing output frames</string>
     <string name="ok">ok</string>

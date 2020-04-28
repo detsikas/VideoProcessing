@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
             mVideoView.setVideoURI(mVideoUri);
             mVideoView.setOnPreparedListener(mp -> {
                 mVideoView.start();
-                mProcessButton.setVisibility(View.INVISIBLE);
+                mProcessButton.setVisibility(View.VISIBLE);
             });
 
             mVideoView.setOnCompletionListener(mp -> mProcessButton.setVisibility(View.VISIBLE));
