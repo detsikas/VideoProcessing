@@ -3,9 +3,11 @@ Frame by frame processing of video on Android using OpenGL
 # Frameworks used
 MediaCodec, MediaExtractor
 # Description
-The application extracts the first 10 frames of the first video track of a video file, applies some custom processing on each frame and saves it in DCIM/VideoProcessing
+The application extracts the first 10 frames of the first video track of a video file, applies some custom processing on each frame and saves it in DCIM/VideoProcessing.
 
-The processing is done with OpenGL.
+Frame extraction, decoding and encoding are done asynchronously.
+
+The frame processing is done with OpenGL.
 
 The number of frames extracted is a integer resource and can easily be changed.
 
