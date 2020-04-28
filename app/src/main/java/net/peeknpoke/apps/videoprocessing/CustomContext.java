@@ -38,11 +38,13 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
     private Context mContext;
     private float[] mTransformMatrix = new float[16];
     private ArrayList<WeakReference<RendererObserver>> mObservers = new ArrayList<>();
+    private int maxFrames;
 
     CustomContext(Context context,
                          int imageWidth, int imageHeight)
     {
         mContext = context;
+        maxFrames = mContext.getResources().getInteger(R.integer.MAX_FRAMES);
         mDpy = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         int[] version = new int[2];
         EGL14.eglInitialize(mDpy, version, 0, version, 1);
@@ -95,11 +97,11 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
     private void onDrawFrame()
     {
        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
-        if (mRenderer!=null)
+        if (mRenderer!=null && mOutputFrameIndex<maxFrames)
         {
             mRenderer.onDrawFrame(mTransformMatrix, mTextureHandler.getTexture(), mImageWidth, mImageHeight);
             mOutputFrameIndex++;
-            if (mOutputFrameIndex==mContext.getResources().getInteger(R.integer.MAX_FRAMES))
+            if (mOutputFrameIndex==maxFrames)
                 notifyObservers();
         }
     }
