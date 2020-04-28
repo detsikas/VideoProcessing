@@ -10,13 +10,16 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
-class FrameProcessor implements RendererObserver{
+class FrameProcessor implements RendererObserver, ObserverSubject<FrameProcessorObserver> {
     private static final String TAG = FrameProcessor.class.getSimpleName();
     private CustomContext mRenderingContext;
     private MediaCodec mMediaCodec;
     private MediaExtractor mMediaExtractor;
+    private ArrayList<WeakReference<FrameProcessorObserver>> mObservers = new ArrayList<>();
 
     FrameProcessor(Context context, Uri uri) throws IOException {
         mMediaExtractor = new MediaExtractor();
@@ -148,5 +151,41 @@ class FrameProcessor implements RendererObserver{
     @Override
     public void stopDecoding() {
         stop();
+        notifyObservers();
+    }
+
+    private WeakReference<FrameProcessorObserver> findWeakReference(FrameProcessorObserver rendererObserver)
+    {
+        WeakReference<FrameProcessorObserver> weakReference = null;
+        for(WeakReference<FrameProcessorObserver> ref : mObservers) {
+            if (ref.get() == rendererObserver) {
+                weakReference = ref;
+            }
+        }
+        return weakReference;
+    }
+
+    @Override
+    public void registerObserver(FrameProcessorObserver observer) {
+        WeakReference<FrameProcessorObserver> weakReference = findWeakReference(observer);
+        if (weakReference==null)
+            mObservers.add(new WeakReference<>(observer));
+    }
+
+    @Override
+    public void removeObserver(FrameProcessorObserver observer) {
+        WeakReference<FrameProcessorObserver> weakReference = findWeakReference(observer);
+        if (weakReference != null) {
+            mObservers.remove(weakReference);
+        }
+    }
+
+    @Override
+    public void notifyObservers() {
+        for (WeakReference<FrameProcessorObserver> co:mObservers){
+            FrameProcessorObserver observer = co.get();
+            if (observer!=null)
+                observer.doneProcessing();
+        }
     }
 }

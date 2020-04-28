@@ -12,13 +12,14 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.VideoView;
 
 import net.peeknpoke.apps.videoprocessing.permissions.StoragePermissionHandler;
 
 import java.io.IOException;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements FrameProcessorObserver{
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int PICK_FROM_GALLERY = 1;
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private FrameProcessor mFrameProcessor;
     private Uri mVideoUri;
     private Handler mFrameHandler = new Handler();
+    private ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
         mVideoView = findViewById(R.id.videoView);
         mProcessButton = findViewById(R.id.process);
+        mProgressBar = findViewById(R.id.processingBar);
     }
 
     public void onLoad(View view)
@@ -48,9 +51,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void onProcess(View view)
     {
+        mProgressBar.bringToFront();
+        mProgressBar.setVisibility(View.VISIBLE);
         mFrameHandler.post(() -> {
             try {
                 mFrameProcessor = new FrameProcessor(getApplicationContext(), mVideoUri);
+                mFrameProcessor.registerObserver(this);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -108,5 +114,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         mStoragePermissionHandler.checkAndRequestPermission(MainActivity.this, StoragePermissionHandler.CODE);
+    }
+
+    @Override
+    public void doneProcessing() {
+        mFrameProcessor.removeObserver(this);
+        runOnUiThread(() -> mProgressBar.setVisibility(View.INVISIBLE));
     }
 }

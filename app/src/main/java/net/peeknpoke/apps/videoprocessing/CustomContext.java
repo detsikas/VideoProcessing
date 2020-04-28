@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-class CustomContext implements SurfaceTexture.OnFrameAvailableListener, ObserverSubject {
+class CustomContext implements SurfaceTexture.OnFrameAvailableListener, ObserverSubject<RendererObserver> {
     private static final String TAG = CustomContext.class.getSimpleName();
     private final EGLContext mCtx;
     private final EGLDisplay mDpy;
