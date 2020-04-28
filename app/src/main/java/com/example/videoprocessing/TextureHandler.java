@@ -1,17 +1,17 @@
 package com.example.videoprocessing;
 
-import android.graphics.Bitmap;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
-import android.opengl.GLUtils;
 
 class TextureHandler {
     private int mTexture;
 
     TextureHandler() {
         mTexture = createTexture();
+        loadTexture();
     }
 
-    static int createTexture()
+    private int createTexture()
     {
         final int[] textureHandle = new int[1];
         GLES30.glGenTextures(1, textureHandle, 0);
@@ -24,19 +24,18 @@ class TextureHandler {
         return textureHandle[0];
     }
 
-    void loadTexture(Bitmap image) {
-        // Bind to the texture in OpenGL
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mTexture);
+    private void loadTexture() {
+        if (mTexture != 0)
+        {
+            // Bind to the texture in OpenGL
+            GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTexture);
 
-        // Set filtering
-        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
-        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
-        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
-        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
-
-        // Load the bitmap into the bound texture.
-        GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, image, 0);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+            // Set filtering
+            GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+            GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+            GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
+            GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        }
     }
 
     int getTexture() {

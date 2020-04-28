@@ -1,6 +1,7 @@
 package com.example.videoprocessing;
 
 import android.content.Context;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 import android.opengl.Matrix;
 import android.util.Log;
@@ -79,7 +80,7 @@ class Renderer {
         GLES30.glUseProgram(mProgram);
 
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture);
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture);
 
         // Copy the texture transformation matrix over.
         GLES30.glUniformMatrix4fv(muTexMatrixLoc, 1, false, IDENTITY_MATRIX, 0);
@@ -113,7 +114,7 @@ class Renderer {
         GLES30.glDisableVertexAttribArray(quadPositionParam);
         GLES30.glDisableVertexAttribArray(quadTexCoordParam);
 
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
 
         GLES30.glUseProgram(0);
         checkGLError(TAG, "Draw");

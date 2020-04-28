@@ -4,23 +4,29 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.VideoView;
 
+import com.example.videoprocessing.permissions.StoragePermissionHandler;
+
+import java.io.IOException;
+
 public class MainActivity extends AppCompatActivity {
-    private static final int EXTERNAL_STORAGE_PERMISSION_REQUEST = 0x1;
+    private static final String TAG = MainActivity.class.getSimpleName();
+
     private static final int PICK_FROM_GALLERY = 1;
-    private String [] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    final StoragePermissionHandler mStoragePermissionHandler = new StoragePermissionHandler();
 
     private VideoView videoView;
     private Button processButton;
+
+    private Uri mVideoUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,38 +44,56 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(galleryIntent, PICK_FROM_GALLERY);
     }
 
+    public void onProcess(View view)
+    {
+        try {
+            FrameProcessor frameProcessor = new FrameProcessor(getApplicationContext(), mVideoUri);
+            frameProcessor.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == PICK_FROM_GALLERY && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            Uri uri = data.getData();
-            videoView.setVideoURI(uri);
-            videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    videoView.start();
-                    processButton.setVisibility(View.INVISIBLE);
-                }
+            mVideoUri = data.getData();
+            videoView.setVideoURI(mVideoUri);
+            videoView.setOnPreparedListener(mp -> {
+                videoView.start();
+                processButton.setVisibility(View.INVISIBLE);
             });
 
-            videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    processButton.setVisibility(View.VISIBLE);
-                }
-            });
+            videoView.setOnCompletionListener(mp -> processButton.setVisibility(View.VISIBLE));
         }
     }
 
-
-    // Permissions
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        boolean permissionGranted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-        if (!permissionGranted )
-            finish();
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
+    {
+        if (requestCode != StoragePermissionHandler.CODE) {
+            Log.d(TAG, "Got unexpected permission result: " + requestCode);
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
+        }
+
+        if (grantResults.length != 0) {
+            if (grantResults[0] == PackageManager.PERMISSION_DENIED)
+            {
+                mStoragePermissionHandler.checkAndRequestPermission(this, requestCode);
+
+                Log.e(TAG, "Permission not granted: results len = " + grantResults.length +
+                        " Result code = " + grantResults[0]);
+                finish();
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mStoragePermissionHandler.checkAndRequestPermission(MainActivity.this, StoragePermissionHandler.CODE);
     }
 }

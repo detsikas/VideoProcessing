@@ -3,8 +3,7 @@ package com.example.videoprocessing;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
+import android.graphics.SurfaceTexture;
 import android.net.Uri;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
@@ -12,14 +11,16 @@ import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLSurface;
 import android.opengl.GLES30;
-import android.provider.MediaStore;
+import android.util.Log;
+import android.view.Surface;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-class CustomContext {
+class CustomContext implements SurfaceTexture.OnFrameAvailableListener {
+    private static final String TAG = CustomContext.class.getSimpleName();
     private final EGLContext mCtx;
     private final EGLDisplay mDpy;
     private final EGLSurface mSurf;
@@ -29,10 +30,15 @@ class CustomContext {
     private Renderer mRenderer;
     private int mImageWidth;
     private int mImageHeight;
+    private SurfaceTexture mSurfaceTexture;
+    private Surface mSurface;
+    private int mOutputFrameIndex;
+    private Context mContext;
 
-    public CustomContext(Context context,
+    CustomContext(Context context,
                          int imageWidth, int imageHeight)
     {
+        mContext = context;
         mDpy = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         int[] version = new int[2];
         EGL14.eglInitialize(mDpy, version, 0, version, 1);
@@ -76,9 +82,13 @@ class CustomContext {
         mBB.order(ByteOrder.nativeOrder());
         mBitmap = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
         mRenderer = new Renderer(context);
+
+        mSurfaceTexture = new SurfaceTexture(mTextureHandler.getTexture());
+        mSurface = new Surface(mSurfaceTexture);
+        mSurfaceTexture.setOnFrameAvailableListener(this);
     }
 
-    public void onDrawFrame()
+    private void onDrawFrame()
     {
        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
         if (mRenderer!=null)
@@ -87,10 +97,11 @@ class CustomContext {
         }
     }
 
-    public void release()
+    void release()
     {
         cleanup();
         mTextureHandler.cleanup();
+        mSurfaceTexture.release();
 
         EGL14.eglMakeCurrent(mDpy, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
                 EGL14.EGL_NO_CONTEXT);
@@ -99,58 +110,12 @@ class CustomContext {
         EGL14.eglTerminate(mDpy);
     }
 
-    public void processImage(byte[] bytes)
+    Surface getSurface()
     {
-        // Create the image
-        Bitmap image = createImage(bytes);
-
-        mTextureHandler.loadTexture(image);
+        return mSurface;
     }
 
-    public void loadTexture(Bitmap image)
-    {
-        mTextureHandler.loadTexture(image);
-    }
-
-    private Bitmap createImage(byte[] bytes)
-    {
-        return convertJpegToBitmap(bytes);
-    }
-
-    static Bitmap convertJpegToBitmap(byte[] bytes)
-    {
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-    }
-
-    public static Matrix getImageRotationMatrix(int cameraRotation, int cameraFacing)
-    {
-        Matrix rotationMatrix = new Matrix();
-        float rotationAngle = 0;
-        if (cameraRotation!=0)
-        {
-            rotationAngle = -(4-cameraRotation)*90;
-        }
-
-        rotationMatrix.postRotate(rotationAngle);
-
-        /*
-        if (cameraFacing== CameraSource.CAMERA_FACING_BACK)
-        {
-            rotationMatrix.postRotate(90);
-        }
-        */
-        return rotationMatrix;
-    }
-
-    public void copyPixelsIntoBitmap(Bitmap bitmap)
-    {
-        GLES30.glReadPixels(0, 0, mImageWidth, mImageHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, mBB);
-
-        bitmap.copyPixelsFromBuffer(mBB);
-        mBB.rewind();
-    }
-
-    public File savePixels(Context context, String groupName, String name)
+    private void savePixels(Context context, String filename)
     {
         GLES30.glReadPixels(0, 0, mImageWidth, mImageHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, mBB);
 
@@ -159,35 +124,26 @@ class CustomContext {
 
         //bitmap.setPixels(pixelsBuffer, screenshotSize-width, -width, 0, 0, width, height);
 
-        return saveImage(mBitmap, context, groupName, name);
+        saveImage(mBitmap, context, filename);
     }
 
-    public Bitmap getFilteredBitmap()
-    {
-        return mBitmap;
-    }
-
-    private File saveImage(Bitmap image, Context context, String groupName, String name)
+    private void saveImage(Bitmap image, Context context, String filename)
     {
         //Store to sdcard
         try {
             File folder = FileOperations.getAppMediaFolder(context);
             if (folder!=null)
             {
-                File imageFile = FileOperations.createMediaFile(folder, MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE,
-                        groupName, name);
+                File imageFile = FileOperations.createMediaFile(folder, filename);
                 FileOutputStream out = new FileOutputStream(imageFile);
                 image.compress(Bitmap.CompressFormat.JPEG, 100, out); //Output
                 Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                 mediaScanIntent.setData(Uri.fromFile(imageFile));
                 context.sendBroadcast(mediaScanIntent);
-                return imageFile;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return null;
     }
 
     private void cleanup()
@@ -196,5 +152,18 @@ class CustomContext {
             mRenderer.cleanup();
 
         mRenderer = null;
+    }
+
+    void setOutputFrameIndex(int outputFrameIndex) {
+        this.mOutputFrameIndex = outputFrameIndex;
+    }
+
+    @Override
+    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        Log.d(TAG, "Frame is available for rendering");
+        mSurfaceTexture.updateTexImage();
+        onDrawFrame();
+        String filename = "output_"+mOutputFrameIndex;
+        savePixels(mContext, filename);
     }
 }

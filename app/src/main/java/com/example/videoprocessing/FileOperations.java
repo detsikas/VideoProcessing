@@ -52,23 +52,13 @@ class FileOperations {
         return mediaStorageDir;
     }
 
-    public static File createMediaFile(File mediaStorageDir, int type,
-                                       String effectGroupName, String effectName)
+    static File createMediaFile(File mediaStorageDir, String filename)
     {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
 
-        File mediaFile;
         String definingFilename = mediaStorageDir.getPath() + File.separator +
-                timeStamp + "_" + effectGroupName + "_" + effectName;
+                timeStamp + "_" + filename;
         definingFilename = definingFilename.replace(' ','_').replace('\'','_');
-        if (type == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE){
-            mediaFile = new File(definingFilename + ".jpg");
-        } else if(type == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
-            mediaFile = new File(definingFilename + ".mp4");
-        } else {
-            return null;
-        }
-
-        return mediaFile;
+        return new File(definingFilename + ".jpg");
     }
 }
