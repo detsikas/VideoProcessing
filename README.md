@@ -5,7 +5,7 @@ MediaCodec, MediaExtractor
 # Description
 The application extracts the first 10 frames of the first video track of a video file, applies some custom processing on each frame and saves it in DCIM/VideoProcessing.
 
-Frame extraction, decoding and encoding are done asynchronously.
+Frame extraction, decoding and editing are done asynchronously.
 
 The frame processing is done with OpenGL.
 
