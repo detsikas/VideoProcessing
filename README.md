@@ -13,3 +13,5 @@ The number of frames extracted is a integer resource and can easily be changed.
 
 The OpenGL shaders are in the assets folder. Currently, the use of the negative fragment shader is hardcoded. You can easily add your own shaders.
 
+In addition to that, the project is quite modular so that each functionality is as separated as possible from the rest, making it easier to read and extend.
+
