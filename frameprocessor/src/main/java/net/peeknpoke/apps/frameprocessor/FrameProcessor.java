@@ -24,11 +24,13 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
     private MediaExtractor mMediaExtractor;
     private Handler mMainHandler;
     private MediaFormat mMediaFormat;
+    private int mMaxFrames;
     private ArrayList<WeakReference<FrameProcessorObserver>> mObservers = new ArrayList<>();
 
     public FrameProcessor(final Context context, Uri uri, int maxFrames, String appName) throws IOException {
         mMediaExtractor = new MediaExtractor();
         mMediaExtractor.setDataSource(context, uri, null);
+        mMaxFrames = maxFrames;
         mMainHandler = new Handler(context.getMainLooper());
 
         final Handler renderingHandler = createRenderingThread();
@@ -159,7 +161,7 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
                     e.printStackTrace();
                 }
                 mRenderingContext.proceed = false;
-                if (mRenderingContext.mOutputFrameIndex==10)
+                if (mRenderingContext.mOutputFrameIndex==mMaxFrames)
                     stopDecoding();
             }
         }
