@@ -14,4 +14,6 @@ The number of frames extracted is a integer resource and can easily be changed.
 The OpenGL shaders are in the assets folder. Currently, the use of the negative fragment shader is hardcoded. You can easily add your own shaders.
 
 In addition to that, the project is quite modular so that each functionality is as separated as possible from the rest, making it easier to read and extend.
+## Asynchronous decoding
+MediaCodec works in asynchronous mode, which is the suggested mode of operation. Still, Synchronization with the OpenGL rendering thread is needed. The reason for this is that, the decoder will produce frames faster than OpenGL processing (including reading the pixels and saving to a file) can handle. Without synchronization, frames will be dropped and the application will not decode the first specified number of frames. It will decode the specified number of frames but it is unpredictable which ones.
 
