@@ -165,6 +165,8 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
                     stopDecoding();
             }
         }
+        else
+            stopDecoding();
     }
 
     private int getVideoTrackIndex(MediaExtractor extractor)
