@@ -23,9 +23,9 @@ import java.util.ArrayList;
 
 class CustomContext implements SurfaceTexture.OnFrameAvailableListener, ObserverSubject<RendererObserver> {
     private static final String TAG = CustomContext.class.getSimpleName();
-    private final EGLContext mCtx;
-    private final EGLDisplay mDpy;
-    private final EGLSurface mSurf;
+    private EGLContext mCtx;
+    private EGLDisplay mDpy;
+    private EGLSurface mSurf;
     private TextureHandler mTextureHandler;
     private final ByteBuffer mBB;
     private final Bitmap mBitmap;
@@ -34,12 +34,15 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
     private int mImageHeight;
     private SurfaceTexture mSurfaceTexture;
     private Surface mSurface;
-    private int mOutputFrameIndex = 0;
+    int mOutputFrameIndex = 0;
     private Context mContext;
     private float[] mTransformMatrix = new float[16];
     private ArrayList<WeakReference<RendererObserver>> mObservers = new ArrayList<>();
     private int mMaxFrames;
     private String mAppname;
+    final Object sync = new Object();
+    boolean proceed = false;
+
 
     CustomContext(Context context,
                          int imageWidth, int imageHeight, int maxFrames, String appname)
@@ -47,6 +50,16 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
         mContext = context;
         mMaxFrames = maxFrames;
         mAppname = appname;
+        mImageWidth = imageWidth;
+        mImageHeight = imageHeight;
+
+        mBB = ByteBuffer.allocateDirect(imageHeight*imageWidth * 4);
+        mBB.order(ByteOrder.nativeOrder());
+        mBitmap = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
+    }
+
+    void setupRenderingContext(Context context)
+    {
         mDpy = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         int[] version = new int[2];
         EGL14.eglInitialize(mDpy, version, 0, version, 1);
@@ -66,12 +79,10 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
         EGLConfig config = configs[0];
 
         int[] surfAttr = {
-                EGL14.EGL_WIDTH, imageWidth,
-                EGL14.EGL_HEIGHT, imageHeight,
+                EGL14.EGL_WIDTH, mImageWidth,
+                EGL14.EGL_HEIGHT, mImageHeight,
                 EGL14.EGL_NONE
         };
-        mImageWidth = imageWidth;
-        mImageHeight = imageHeight;
 
         mSurf = EGL14.eglCreatePbufferSurface(mDpy, config, surfAttr, 0);
 
@@ -85,15 +96,12 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
 
         mTextureHandler = new TextureHandler();
         GLES30.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-        mBB = ByteBuffer.allocateDirect(imageHeight*imageWidth * 4);
-        mBB.order(ByteOrder.nativeOrder());
-        mBitmap = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
         mRenderer = new Renderer(context);
 
         mSurfaceTexture = new SurfaceTexture(mTextureHandler.getTexture());
         mSurface = new Surface(mSurfaceTexture);
         mSurfaceTexture.setOnFrameAvailableListener(this);
+        notifySetupComplete();
     }
 
     private void onDrawFrame()
@@ -162,19 +170,22 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
 
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        Log.d(TAG, "Frame is available for rendering");
         if (mOutputFrameIndex< mMaxFrames)
         {
+            Log.d(TAG, "Frame is available for rendering");
             mSurfaceTexture.updateTexImage();
             mSurfaceTexture.getTransformMatrix(mTransformMatrix);
             onDrawFrame();
             String filename = "output_"+mOutputFrameIndex;
             savePixels(mContext, filename);
-            mOutputFrameIndex++;
+        }
+        synchronized (sync)
+        {
+            proceed = true;
+            sync.notify();
         }
 
-        if (mOutputFrameIndex==mMaxFrames)
-            notifyObservers();
+        mOutputFrameIndex++;
     }
 
     private WeakReference<RendererObserver> findWeakReference(RendererObserver rendererObserver)
@@ -203,12 +214,12 @@ class CustomContext implements SurfaceTexture.OnFrameAvailableListener, Observer
         }
     }
 
-    @Override
-    public void notifyObservers() {
+    private void notifySetupComplete()
+    {
         for (WeakReference<RendererObserver> co:mObservers){
             RendererObserver observer = co.get();
             if (observer!=null)
-                observer.stopDecoding();
+                observer.setupComplete();
         }
     }
 }

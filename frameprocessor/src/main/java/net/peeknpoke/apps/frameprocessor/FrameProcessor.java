@@ -5,6 +5,9 @@ import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -19,11 +22,17 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
     private CustomContext mRenderingContext;
     private MediaCodec mMediaCodec;
     private MediaExtractor mMediaExtractor;
+    private Handler mMainHandler;
+    private MediaFormat mMediaFormat;
     private ArrayList<WeakReference<FrameProcessorObserver>> mObservers = new ArrayList<>();
 
-    public FrameProcessor(Context context, Uri uri, int maxFrames, String appName) throws IOException {
+    public FrameProcessor(final Context context, Uri uri, int maxFrames, String appName) throws IOException {
         mMediaExtractor = new MediaExtractor();
         mMediaExtractor.setDataSource(context, uri, null);
+        mMainHandler = new Handler(context.getMainLooper());
+
+        final Handler renderingHandler = createRenderingThread();
+
         int videoTrackIndex = getVideoTrackIndex(mMediaExtractor);
         if (videoTrackIndex <0)
         {
@@ -32,10 +41,10 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
         else
         {
             mMediaExtractor.selectTrack(videoTrackIndex);
-            MediaFormat mediaFormat = mMediaExtractor.getTrackFormat(videoTrackIndex);
-            int width = mediaFormat.getInteger(MediaFormat.KEY_WIDTH);
-            int height = mediaFormat.getInteger(MediaFormat.KEY_HEIGHT);
-            int rotation = mediaFormat.getInteger(MediaFormat.KEY_ROTATION);
+            mMediaFormat = mMediaExtractor.getTrackFormat(videoTrackIndex);
+            int width = mMediaFormat.getInteger(MediaFormat.KEY_WIDTH);
+            int height = mMediaFormat.getInteger(MediaFormat.KEY_HEIGHT);
+            int rotation = mMediaFormat.getInteger(MediaFormat.KEY_ROTATION);
             if (rotation==90 || rotation==270)
             {
                 int temp = width;
@@ -44,13 +53,26 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
             }
             mRenderingContext = new CustomContext(context, width, height, maxFrames, appName);
             mRenderingContext.registerObserver(this);
-            setupMediaCodec(mediaFormat);
+            renderingHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    mRenderingContext.setupRenderingContext(context);
+                }
+            });
         }
     }
 
-    public void start()
+    private void start()
     {
         mMediaCodec.start();
+    }
+
+    private Handler createRenderingThread()
+    {
+        HandlerThread renderingThread = new HandlerThread("CustomContext");
+        renderingThread.start();
+        Looper looper = renderingThread.getLooper();
+        return new Handler(looper);
     }
 
     private void stop()
@@ -126,6 +148,21 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
         }
 
         mMediaCodec.releaseOutputBuffer(index, info.size != 0);
+        if (info.size!=0)
+        {
+            synchronized (mRenderingContext.sync)
+            {
+                try {
+                    while(!mRenderingContext.proceed)
+                        mRenderingContext.sync.wait(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                mRenderingContext.proceed = false;
+                if (mRenderingContext.mOutputFrameIndex==10)
+                    stopDecoding();
+            }
+        }
     }
 
     private int getVideoTrackIndex(MediaExtractor extractor)
@@ -148,10 +185,30 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
         mRenderingContext.release();
     }
 
-    @Override
-    public void stopDecoding() {
+    private void renderingSurfaceCreated() {
+        try {
+            setupMediaCodec(mMediaFormat);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // Create media decoder
+        // Note: this needs the surface created in CustomContext. So order cannot change
+        start();
+    }
+
+    private void stopDecoding() {
         stop();
         notifyObservers();
+    }
+
+    @Override
+    public void setupComplete() {
+        mMainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                renderingSurfaceCreated();
+            }
+        });
     }
 
     private WeakReference<FrameProcessorObserver> findWeakReference(FrameProcessorObserver rendererObserver)
@@ -180,8 +237,7 @@ public class FrameProcessor implements RendererObserver, ObserverSubject<FramePr
         }
     }
 
-    @Override
-    public void notifyObservers() {
+    private void notifyObservers() {
         for (WeakReference<FrameProcessorObserver> co:mObservers){
             FrameProcessorObserver observer = co.get();
             if (observer!=null)

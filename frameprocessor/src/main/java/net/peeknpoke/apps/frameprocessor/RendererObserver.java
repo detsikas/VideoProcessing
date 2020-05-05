@@ -1,5 +1,5 @@
 package net.peeknpoke.apps.frameprocessor;
 
 interface RendererObserver {
-    void stopDecoding();
+    void setupComplete();
 }

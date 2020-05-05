@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -31,7 +30,6 @@ public class MainActivity extends AppCompatActivity implements FrameProcessorObs
     private Button mProcessButton;
     private FrameProcessor mFrameProcessor;
     private Uri mVideoUri;
-    private Handler mFrameHandler = new Handler();
     private ProgressBar mProgressBar;
 
     @Override
@@ -55,17 +53,14 @@ public class MainActivity extends AppCompatActivity implements FrameProcessorObs
     {
         mProgressBar.bringToFront();
         mProgressBar.setVisibility(View.VISIBLE);
-        mFrameHandler.post(() -> {
-            try {
-                mFrameProcessor = new FrameProcessor(getApplicationContext(), mVideoUri,
-                        getResources().getInteger(R.integer.MAX_FRAMES),
-                        getResources().getString(R.string.app_name));
-                mFrameProcessor.registerObserver(this);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mFrameProcessor.start();
-        });
+        try {
+            mFrameProcessor = new FrameProcessor(getApplicationContext(), mVideoUri,
+                    getResources().getInteger(R.integer.MAX_FRAMES),
+                    getResources().getString(R.string.app_name));
+            mFrameProcessor.registerObserver(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
